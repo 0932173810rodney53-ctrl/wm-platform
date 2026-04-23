@@ -441,6 +441,7 @@ function doLogin(){
   if(u==='admin'&&p==='admin123'){
     var saved=localStorage.getItem('wm_api');
     if(saved) API=saved;
+    localStorage.setItem('wm_api_key', API);
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     initUI();
