@@ -890,8 +890,8 @@ async function runAML(){
 
 async function runKPI(){
   showToast('產出KPI月報中...');
-  var period=Utilities_formatDate||('2026-'+String(new Date().getMonth()+1).padStart(2,'0'));
-  period='2026-04';
+  var now=new Date();
+  var period=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   var r=await callAPI('generateKPI',{period:period});
   var log=document.getElementById('kpi-log');
   if(r&&r.status==='success'){
