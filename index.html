@@ -597,10 +597,16 @@ async function callAPI(action, body){
 }
 
 async function callAPIGet(action){
-  if(!API) return null;
+  if(!API){ console.log('callAPIGet: API is empty'); return null; }
   try{
-    return await callJSONP({action:action});
-  }catch(e){ return null; }
+    console.log('callAPIGet:', action, 'API:', API.slice(0,50));
+    var result = await callJSONP({action:action});
+    console.log('callAPIGet result:', action, JSON.stringify(result).slice(0,100));
+    return result;
+  }catch(e){
+    console.log('callAPIGet error:', action, e.message);
+    return null;
+  }
 }
 
 // ── 初始化 Sheets ──
@@ -791,14 +797,18 @@ async function submitNewPR(){
 }
 
 async function loadProcurement(){
+  showToast('載入採購資料中...');
   var rPR=await callAPIGet('getPRList');
   var rCS=await callAPIGet('getCSList');
+  console.log('PR data:', JSON.stringify(rPR));
+  console.log('CS data:', JSON.stringify(rCS));
   _csMap={};
   if(rCS&&rCS.data) rCS.data.forEach(function(c){ _csMap[c['PR單號']]=c; });
 
   var prTbody=document.getElementById('pr-tbody');
   if(!rPR||!rPR.data||rPR.data.length===0){
-    prTbody.innerHTML='<tr><td colspan="6" style="color:var(--gray);text-align:center;padding:20px;">尚無採購PR</td></tr>';
+    var msg=rPR?'尚無採購PR（Sheets有資料請重整）':'API回應失敗，請確認API連線';
+    prTbody.innerHTML='<tr><td colspan="6" style="color:var(--gray);text-align:center;padding:20px;">'+msg+'</td></tr>';
   } else {
     prTbody.innerHTML=rPR.data.map(function(p){
       var cs=_csMap[p['PR單號']];
