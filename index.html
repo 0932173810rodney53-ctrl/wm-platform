@@ -561,24 +561,45 @@ function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 // ── API 呼叫 ──
+// JSONP 方式呼叫 Apps Script（完全解決 CORS）
+function callJSONP(params) {
+  return new Promise(function(resolve, reject) {
+    var cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    window[cbName] = function(data) {
+      delete window[cbName];
+      document.getElementById('jsonp-'+cbName) && document.getElementById('jsonp-'+cbName).remove();
+      resolve(data);
+    };
+    var script = document.createElement('script');
+    script.id = 'jsonp-' + cbName;
+    script.src = API + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify(params));
+    script.onerror = function() {
+      delete window[cbName];
+      script.remove();
+      reject(new Error('JSONP 載入失敗'));
+    };
+    setTimeout(function(){
+      if(window[cbName]){ delete window[cbName]; script.remove(); reject(new Error('Timeout')); }
+    }, 15000);
+    document.head.appendChild(script);
+  });
+}
+
 async function callAPI(action, body){
   if(!API){ showToast('請先設定 API 端點','error'); return null; }
   try{
-    // Apps Script 最穩定方式：GET + JSON 參數
     var params = Object.assign({action:action}, body||{});
-    var url = API + '?payload=' + encodeURIComponent(JSON.stringify(params));
-    var res = await fetch(url, {redirect:'follow'});
-    return await res.json();
+    return await callJSONP(params);
   }catch(e){
     showToast('API連線失敗：'+e.message,'error');
     return null;
   }
 }
+
 async function callAPIGet(action){
   if(!API) return null;
   try{
-    var res = await fetch(API+'?action='+action, {redirect:'follow'});
-    return await res.json();
+    return await callJSONP({action:action});
   }catch(e){ return null; }
 }
 
