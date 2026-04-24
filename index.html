@@ -564,24 +564,20 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 async function callAPI(action, body){
   if(!API){ showToast('請先設定 API 端點','error'); return null; }
   try{
-    var params=Object.assign({action:action},body||{});
-    var form=new FormData();
-    form.append('payload', JSON.stringify(params));
-    var res=await fetch(API,{method:'POST',body:form});
+    // Apps Script 最穩定方式：GET + JSON 參數
+    var params = Object.assign({action:action}, body||{});
+    var url = API + '?payload=' + encodeURIComponent(JSON.stringify(params));
+    var res = await fetch(url, {redirect:'follow'});
     return await res.json();
   }catch(e){
-    // fallback: 改用 GET + 參數
-    try{
-      var qs=encodeURIComponent(JSON.stringify(Object.assign({action:action},body||{})));
-      var res2=await fetch(API+'?payload='+qs);
-      return await res2.json();
-    }catch(e2){ showToast('API連線失敗：'+e2.message,'error'); return null; }
+    showToast('API連線失敗：'+e.message,'error');
+    return null;
   }
 }
 async function callAPIGet(action){
   if(!API) return null;
   try{
-    var res=await fetch(API+'?action='+action);
+    var res = await fetch(API+'?action='+action, {redirect:'follow'});
     return await res.json();
   }catch(e){ return null; }
 }
