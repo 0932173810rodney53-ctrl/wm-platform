@@ -562,11 +562,21 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 // ── API 呼叫 ──
 async function callAPI(action, body){
-  if(!API){ showToast('請先設定 API 端點（點初始化Sheets）','error'); return null; }
+  if(!API){ showToast('請先設定 API 端點','error'); return null; }
   try{
-    var res=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({action:action},body||{}))});
+    var params=Object.assign({action:action},body||{});
+    var form=new FormData();
+    form.append('payload', JSON.stringify(params));
+    var res=await fetch(API,{method:'POST',body:form});
     return await res.json();
-  }catch(e){ showToast('API連線失敗：'+e.message,'error'); return null; }
+  }catch(e){
+    // fallback: 改用 GET + 參數
+    try{
+      var qs=encodeURIComponent(JSON.stringify(Object.assign({action:action},body||{})));
+      var res2=await fetch(API+'?payload='+qs);
+      return await res2.json();
+    }catch(e2){ showToast('API連線失敗：'+e2.message,'error'); return null; }
+  }
 }
 async function callAPIGet(action){
   if(!API) return null;
